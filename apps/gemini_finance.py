@@ -94,9 +94,7 @@ def gemini_finance_response(prompt):
     ]
     config = {
         "tools": finance_tools,
-        # automatically call the function based on the user's prompt
-        "automatic_function_calling": True,
-        # Force the model to call 'any' function, instead of chatting.
+        "automatic_function_calling": {"disable": True},
         "tool_config": {"function_calling_config": {"mode": "any"}},
     }
 

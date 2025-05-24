@@ -79,32 +79,28 @@ def webhook():
                 
             if q == '/start' or not users_dict.get(chat_id, {}):
                 users_dict[chat_id] = {'callback_data': None, 'status': 'start'}
-                welcome_text = """
-                Hi and welcome! 👋
-                FinSight helps you make smarter financial decisions by providing:
+                welcome_text = """Hi and welcome! 👋
+FinSight helps you make smarter financial decisions by providing:
 
-                📄 Automated analysis of financial statements – Upload reports and get clear, actionable insights.
-                🏢 Public company insights – Dive into key metrics, trends, and performance indicators.
-                📈 Real-time stock data – Stay updated with the latest stock prices and market movements.
-                💡 Personalized financial guidance – Understand what the numbers really mean for your portfolio.
+📄 Automated analysis of financial statements – Upload reports and get clear, actionable insights.
+🏢 Public company insights – Dive into key metrics, trends, and performance indicators.
+📈 Real-time stock data – Stay updated with the latest stock prices and market movements.
+💡 Personalized financial guidance – Understand what the numbers really mean for your portfolio.
 
-                To attach a file, upload it and enter your question in the caption.
-                Or you can just enter your question directly to get started!
+To attach a file, upload it and enter your question in the caption.
+Or you can just enter your question directly to get started!
 
-                [Enter /end] - End the session
-                """
+[Enter /end] - End the session"""
                 send_message(chat_id, welcome_text)
                 return jsonify({'action': 'welcome', 'status': 'success'})
             
             if q == '/end':
                 users_dict[chat_id]['status'] = 'end'
-                bye_text = """
-                Thanks for using FinSight!
-                We hope the insights were helpful in guiding your financial decisions.
+                bye_text = """Thanks for using FinSight!
+We hope the insights were helpful in guiding your financial decisions.
 
-                Until next time, stay informed and invest wisely!
-                Type /start whenever you're ready to begin a new session.
-                """
+Until next time, stay informed and invest wisely!
+Type /start whenever you're ready to begin a new session."""    
                 send_message(chat_id, bye_text)
                 return jsonify({'action': 'end', 'status': 'success'})
             
