@@ -12,8 +12,9 @@ app.config.from_object(Config)
 telegram_api_key = Config.TELEGRAM_API_KEY
 base_url = f'https://api.telegram.org/bot{telegram_api_key}/'
 
-users_dict = {}
+users_dict = {} # for simplicity, I am using a dictionary to store the user's state
 
+# function to send message to telegram (by splitting the message into chunks if it is too long)
 def send_message(id, text):
     MAX_MESSAGE_LENGTH = 4096
     data = {'chat_id': id}
@@ -40,10 +41,12 @@ def send_message(id, text):
             response = requests.post(base_url + 'sendMessage', json=data)
     return response.json()
 
+# route to index
 @app.route('/')
 def index():
     return "Telegram Bot Webhook Server is running!"
 
+# route to handle webhook
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'GET':
@@ -115,7 +118,7 @@ def webhook():
         
     return jsonify({'status': 'error', 'message': 'Invalid request'})
 
-# setup webhook by visiting the url (e.g. https://your-domain.com/setup_webhook?url=https://your-domain.com/webhook)
+# route to setup webhook by visiting the url (e.g. https://your-domain.com/setup_webhook?url=https://your-domain.com/webhook)
 @app.route('/setup_webhook', methods=['GET'])
 def setup_webhook():
     webhook_url = request.args.get('url')
@@ -125,11 +128,13 @@ def setup_webhook():
     response = requests.post(base_url + 'setWebhook', json=data)
     return jsonify(response.json())
 
+# route to get webhook info
 @app.route('/get_webhook_info', methods=['GET'])
 def get_webhook_info():
     response = requests.get(base_url + 'getWebhookInfo')
     return jsonify(response.json())
 
+# route to delete webhook
 @app.route('/delete_webhook', methods=['GET'])
 def delete_webhook():
     response = requests.get(base_url + 'deleteWebhook')

@@ -5,10 +5,12 @@ import pandas as pd
 import yfinance as yf
 
 def gemini_finance_response(prompt):
-    # Define the function declaration for the model
+    # Define the function declarations for the model
+
+    # function declaration for getting financial data and statements
     get_financial_info_function = {
         "name": "get_financial_info",
-        "description": "Retrieve latest/current stock price and financial data such as income statements, balance sheets and cashflow using the ticker symbol.",
+        "description": "Retrieve the financial data such as income statements, balance sheets and cashflow using the ticker symbol.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -21,9 +23,10 @@ def gemini_finance_response(prompt):
         },
     }
 
+    # function declaration for getting stock price (current price and historical price)
     get_stock_price_function = {
         "name": "get_stock_price",
-        "description": "Retrieve the current stock price of a publicly traded company using a company's ticker symbol.",
+        "description": "Retrieve the current and historical stock price of a publicly traded company using a company's ticker symbol.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -43,12 +46,11 @@ def gemini_finance_response(prompt):
             "required": ["ticker", "period", "interval"],
         },
     }
-    
 
+    # actual function for getting financial data and statements
     def get_financial_info(ticker):
         t = yf.Ticker(ticker)
         
-        # Get company info
         info = t.info
         company_name = info.get('longName', ticker)
         
@@ -63,16 +65,15 @@ def gemini_finance_response(prompt):
         
         return {
             'company_name': company_name,
-            'current_price': t.info.get('currentPrice', 'Not Available'),
             'income_statement': format_data(income_stmt),
             'balance_sheet': format_data(balance_sheet),
             'cash_flow': format_data(cash_flow)
         }
     
+    # actual function for getting stock price (current price and historical price)
     def get_stock_price(ticker, period, interval):
         t = yf.Ticker(ticker)
 
-        # Get company info
         info = t.info
         company_name = info.get('longName', ticker)
         
@@ -86,13 +87,14 @@ def gemini_finance_response(prompt):
             'stock_price': stock_price.to_json(orient='columns')
         }
 
-    # Configure the client and tools
+    # Configure the client and tools for function calling
     client = genai.Client(api_key=Config.GEMINI_API_KEY)
     finance_tools = [
         types.Tool(function_declarations=[get_financial_info_function, get_stock_price_function])
     ]
     config = {
         "tools": finance_tools,
+        # automatically call the function based on the user's prompt
         "automatic_function_calling": True,
         # Force the model to call 'any' function, instead of chatting.
         "tool_config": {"function_calling_config": {"mode": "any"}},
@@ -109,7 +111,6 @@ def gemini_finance_response(prompt):
         contents=contents,
         config=config,
     )
-
     print(response.candidates[0].content.parts[0].function_call)
 
     # Extract tool call details
@@ -118,7 +119,6 @@ def gemini_finance_response(prompt):
     if tool_call.name == "get_financial_info":
         result = get_financial_info(**tool_call.args)
         print(f"Financial data result: {result}")
-
     elif tool_call.name == "get_stock_price":
         result = get_stock_price(**tool_call.args)
         print(f"Stock price result: {result}")
@@ -133,10 +133,15 @@ def gemini_finance_response(prompt):
     contents.append(types.Content(role="model", parts=[types.Part(function_call=tool_call)])) # Append the model's function call message
     contents.append(types.Content(role="user", parts=[function_response_part])) # Append the function response
 
+    # define system instruction for the response
+    final_config = types.GenerationConfig(
+        system_instruction='You are an AI financial assistant integrated into a Telegram app. Your job is to provide accurate, professional, and insightful responses to users. Your goal is to help users make smarter financial decisions by providing reliable, easy-to-understand insights based on real data and sound financial logic. Maintain a professional and engaging tone in your responses. Do NOT respond to non-financial topics and inform users that you are not able to answer that question.'
+    )
 
     final_response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=contents,
+        config=final_config,
     )
 
     return final_response.text
