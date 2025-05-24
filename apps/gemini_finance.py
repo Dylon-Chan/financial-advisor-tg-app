@@ -104,6 +104,7 @@ def gemini_finance_response(prompt):
             role="user", parts=[types.Part(text=prompt)]
         )
     ]
+    
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=contents,
@@ -131,15 +132,12 @@ def gemini_finance_response(prompt):
     contents.append(types.Content(role="model", parts=[types.Part(function_call=tool_call)])) # Append the model's function call message
     contents.append(types.Content(role="user", parts=[function_response_part])) # Append the function response
 
-    # define system instruction for the response
-    final_config = types.GenerationConfig(
-        system_instruction='You are an AI financial assistant integrated into a Telegram app. Your job is to provide accurate, professional, and insightful responses to users. Your goal is to help users make smarter financial decisions by providing reliable, easy-to-understand insights based on real data and sound financial logic. Maintain a professional and engaging tone in your responses. Do NOT respond to non-financial topics and inform users that you are not able to answer that question.'
-    )
-
     final_response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=contents,
-        config=final_config,
+        config=types.GenerateContentConfig(
+            system_instruction=['You are an AI financial assistant integrated into a Telegram app. Your job is to provide accurate, professional, and insightful responses to users. Your goal is to help users make smarter financial decisions by providing reliable, easy-to-understand insights based on real data and sound financial logic. Maintain a professional and engaging tone in your responses. Do NOT respond to non-financial topics and inform users that you are not able to answer that question.']
+        )
     )
 
     return final_response.text
