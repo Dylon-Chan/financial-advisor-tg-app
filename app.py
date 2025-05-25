@@ -5,6 +5,9 @@ import time
 from apps.gemini_finance import gemini_finance_response
 from io import StringIO
 import pandas as pd
+import pypdf
+import tempfile
+import os
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -63,18 +66,35 @@ def webhook():
 
             if file_upload:
                 caption = message.get('caption','')
+                file_type = file_upload['mime_type']
                 if not caption:
                     send_message(chat_id, 'Please enter your prompt in the caption when uploading a file!')
                     return jsonify({'error': 'no caption', 'status': 'error'})
-                if file_upload['mime_type'] != 'text/csv':
-                    send_message(chat_id, 'I am sorry that I can only accept CSV file now. Please re-upload a CSV file.')
-                    return jsonify({'error': 'not csv', 'status': 'error'})
+                if file_type not in ['text/csv', 'application/vnd.ms-excel', 'application/pdf']:
+                    send_message(chat_id, 'I am sorry that I can only accept CSV, Excel, or PDF file. Please re-upload a correct file.')
+                    return jsonify({'error': 'not correct file type', 'status': 'error'})
                 file_id = file_upload['file_id']
                 get_file = requests.get(base_url + f'getFile?file_id={file_id}')
                 file_path = get_file.json()['result']['file_path']
                 download_file = requests.get(f'https://api.telegram.org/file/bot{telegram_api_key}/{file_path}')
-                df = pd.read_csv(StringIO(download_file.text))
-                file_text = df.to_string(index=False)
+                if file_upload['mime_type'] == 'text/csv':
+                    df = pd.read_csv(StringIO(download_file.text))
+                    file_text = df.to_string(index=False)
+                elif file_upload['mime_type'] == 'application/vnd.ms-excel':
+                    df = pd.read_excel(StringIO(download_file.text))
+                    file_text = df.to_string(index=False)
+                elif file_upload['mime_type'] == 'application/pdf':
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_pdf:
+                        temp_pdf.write(download_file.content)
+                        temp_pdf_path = temp_pdf.name
+                    reader = pypdf.PdfReader(temp_pdf_path)
+                    file_text = ''
+                    for p in reader.pages:
+                        txt = p.extract_text()
+                        if txt:
+                            file_text += txt + '\n'
+                    os.remove(temp_pdf_path)
+
                 q = f'{file_text}\n\n{caption}'
                 
             if q == '/start' or not users_dict.get(chat_id, {}):
