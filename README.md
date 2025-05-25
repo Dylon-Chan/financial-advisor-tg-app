@@ -64,7 +64,7 @@ Send the `/start` command to the bot
 
 ![get_stock_info](./assets/get-stock-info.png)
 
-The information provided is accurate as of the date of the stock price as shown below:
+The information generated is accurate as of the date of the stock price (as shown below):
 
 ![stock_info_yahoo_finance](./assets/stock-info-yahoo-finance.png)
 
